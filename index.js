@@ -2,6 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+app.use(express.json());
 const PORT = 5000;
 /**
  * Dang nhap
@@ -33,11 +34,11 @@ app.get("/teacher", checkLogin, checkManager, (req, res) => {
   res.json({ message: "hello, this is teacher" });
 });
 
-
 //Login
 app.post("/api/login", (req, res) => {
-  var id = { username: "manager" };
-  const token = jwt.sign({ id }, "secretKey");
+  var username = req.body.username;
+
+  const token = jwt.sign({ username }, "secretKey");
   res.json({ token: token });
 });
 
@@ -54,11 +55,19 @@ app.get("/api/protected", validateToken, (req, res) => {
 //Middleware tai su dung
 function checkLogin(req, res, next) {
   try {
-    var token ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6eyJ1c2VybmFtZSI6Im1hbmFnZXIifSwiaWF0IjoxNjQxOTEzMTg5fQ.k6RkHIVWL1BWzf-vPlS372px_aZrxch1psRDGtex8aQ"
+    var token =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlYWNoZXIiLCJpYXQiOjE2NDE5MTYzMjB9.J5O7Lr7ikl1vvfLa7tTOtBUxfdcuAiSF3_N_kcijLXM";
     var idUser = jwt.verify(token, "secretKey");
-
-    if (database.username == idUser.username) {
-    //   req.data = data;
+    const dataSet = database.map((data) => {
+      if (data.username == idUser.username) {
+        req.data = data;
+        return true;
+      }
+      return false;
+    });
+    // console.log(dataSet);
+    if (dataSet) {
+      //   req.data = data;
       next();
     } else {
       res.json("NOT PERMISSION");
@@ -69,7 +78,7 @@ function checkLogin(req, res, next) {
 }
 
 function checkStudent(req, res, next) {
-  const role = "manager";
+  const role = req.data.role;
   if (role == "student" || role == "teacher" || role == "manager") {
     next();
   } else {
@@ -78,7 +87,7 @@ function checkStudent(req, res, next) {
 }
 
 function checkTeacher(req, res, next) {
-  const role = "manager";
+  const role = req.data.role;
   if (role == "teacher" || role == "manager") {
     next();
   } else {
@@ -87,7 +96,7 @@ function checkTeacher(req, res, next) {
 }
 
 function checkManager(req, res, next) {
-  const role = "manager";
+  const role = req.data.role;
   if (role == "manager") {
     next();
   } else {
